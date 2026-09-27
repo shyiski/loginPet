@@ -15,7 +15,9 @@ import {
   Divider,
   Modal,
   Avatar,
-  UnstyledButton
+  UnstyledButton,
+  Paper,
+  Box
 } from "@mantine/core";
 import {
   IconLock,
@@ -26,7 +28,8 @@ import {
   IconLogin,
   IconShield,
   IconDatabase,
-  IconBrandGoogle
+  IconBrandGoogle,
+  IconCheck
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { api } from "../api.js";
@@ -108,6 +111,11 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
     }
   };
 
+  const hasMinLength = regPassword.length >= 6;
+  const hasUppercase = /[A-Z]/.test(regPassword);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`§±]/.test(regPassword);
+  const isPasswordValid = hasMinLength && hasUppercase && hasSpecialChar;
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError(null);
@@ -117,8 +125,18 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
       return;
     }
 
-    if (regPassword.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (!hasMinLength) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (!hasUppercase) {
+      setError("Password must contain at least one uppercase letter (A-Z)");
+      return;
+    }
+
+    if (!hasSpecialChar) {
+      setError("Password must contain at least one special character or symbol (!@#$...)");
       return;
     }
 
@@ -346,7 +364,7 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
 
                 <PasswordInput
                   label="Password"
-                  placeholder="At least 6 characters"
+                  placeholder="Min 6 chars, uppercase & special symbol"
                   leftSection={<IconLock size={16} />}
                   value={regPassword}
                   onChange={(e) => setRegPassword(e.target.value)}
@@ -354,6 +372,41 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
                   required
                   radius="md"
                 />
+
+                {/* Password Complexity Checklist */}
+                {regPassword.length > 0 && (
+                  <Paper p="xs" radius="md" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <Stack gap={4}>
+                      <Text size="xs" fw={600} c="dimmed">Password requirements:</Text>
+                      <Group gap="xs">
+                        <Badge
+                          size="xs"
+                          variant={hasMinLength ? "filled" : "outline"}
+                          color={hasMinLength ? "teal" : "gray"}
+                          leftSection={hasMinLength ? <IconCheck size={10} stroke={3} /> : null}
+                        >
+                          6+ characters
+                        </Badge>
+                        <Badge
+                          size="xs"
+                          variant={hasUppercase ? "filled" : "outline"}
+                          color={hasUppercase ? "teal" : "gray"}
+                          leftSection={hasUppercase ? <IconCheck size={10} stroke={3} /> : null}
+                        >
+                          1 uppercase (A-Z)
+                        </Badge>
+                        <Badge
+                          size="xs"
+                          variant={hasSpecialChar ? "filled" : "outline"}
+                          color={hasSpecialChar ? "teal" : "gray"}
+                          leftSection={hasSpecialChar ? <IconCheck size={10} stroke={3} /> : null}
+                        >
+                          1 symbol (!@#$...)
+                        </Badge>
+                      </Group>
+                    </Stack>
+                  </Paper>
+                )}
 
                 <Badge
                   color="teal"

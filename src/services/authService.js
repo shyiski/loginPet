@@ -26,6 +26,14 @@ export const authService = {
       throw new Error('Password must be at least 6 characters long');
     }
 
+    if (!/[A-Z]/.test(password)) {
+      throw new Error('Password must contain at least one uppercase letter (A-Z)');
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`§±]/.test(password)) {
+      throw new Error('Password must contain at least one special character or symbol (!@#$...)');
+    }
+
     const cleanEmail = email.trim().toLowerCase();
     const existingUser = await userRepo.findByEmail(cleanEmail);
     if (existingUser) {
