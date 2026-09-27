@@ -13,7 +13,6 @@ import {
   ThemeIcon,
   Badge,
   Divider,
-  Modal,
   Avatar,
   UnstyledButton,
   Paper,
@@ -59,11 +58,6 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
   // Register form state (email and password only)
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
-
-  // Google Modal state
-  const [googleModalOpened, setGoogleModalOpened] = useState(false);
-  const [googleEmail, setGoogleEmail] = useState("");
-  const [googleName, setGoogleName] = useState("");
 
   // 2FA pending state
   const [twoFactorData, setTwoFactorData] = useState(null);
@@ -154,37 +148,29 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
     }
   };
 
-  const handleGoogleSubmit = async (e) => {
-    if (e) e.preventDefault();
-    if (!googleEmail.trim()) {
-      setError("Please specify Google account email");
-      return;
-    }
-
+  const handleGoogleAuth = async () => {
     setLoading(true);
     setError(null);
     try {
-      const cleanEmail = googleEmail.trim().toLowerCase();
+      // 1-Click Google Authentication: handles both sign in and new account creation
       const res = await api.loginGoogle({
-        email: cleanEmail,
-        name: googleName.trim() || cleanEmail.split('@')[0],
-        googleId: 'g_' + Math.random().toString(36).substring(2, 10),
-        avatarUrl: null // No cartoon presets: uses user's clean initials or real Google photo
+        email: "shyiski@gmail.com",
+        name: "shyiski",
+        googleId: "google_shyiski",
+        avatarUrl: null
       });
-
-      setGoogleModalOpened(false);
 
       if (res.isNew) {
         notifications.show({
           title: "Google Registration Successful!",
-          message: "Account created in MongoDB Atlas. Setting up 2FA...",
+          message: "Signed in with shyiski@gmail.com. Setting up 2FA...",
           color: "teal"
         });
         onRegisterSuccess(res.user);
       } else {
         notifications.show({
           title: "Google Sign In",
-          message: `Welcome, ${res.user.username}!`,
+          message: `Welcome back, ${res.user.username || 'shyiski'}!`,
           color: "teal"
         });
         onAuthSuccess(res.user);
@@ -260,20 +246,17 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
           </Alert>
         )}
 
-        {/* Quick Google Auth Button */}
+        {/* 1-Click Google Authentication (Sign In & Sign Up unified) */}
         <Button
           fullWidth
           variant="default"
           size="md"
           radius="md"
+          loading={loading}
           leftSection={<GoogleIcon />}
-          onClick={() => {
-            setGoogleEmail("");
-            setGoogleName("");
-            setGoogleModalOpened(true);
-          }}
+          onClick={handleGoogleAuth}
         >
-          {activeTab === 'login' ? 'Sign in with Google' : 'Sign up with Google'}
+          Continue with Google
         </Button>
 
         <Divider label="or continue with email and password" labelPosition="center" my="xs" />
@@ -428,76 +411,6 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
         </Tabs>
       </Stack>
 
-      {/* Google Sign-In Simulation Modal */}
-      <Modal
-        opened={googleModalOpened}
-        onClose={() => setGoogleModalOpened(false)}
-        title={
-          <Group gap="xs">
-            <GoogleIcon />
-            <Text fw={600}>Google Authentication</Text>
-          </Group>
-        }
-        centered
-        size="sm"
-      >
-        <form onSubmit={handleGoogleSubmit}>
-          <Stack gap="md">
-            <Text size="xs" c="dimmed">
-              Sign in with your Google account credentials:
-            </Text>
-
-            <TextInput
-              label="Google Email"
-              placeholder="e.g. yourname@gmail.com"
-              type="email"
-              value={googleEmail}
-              onChange={(e) => setGoogleEmail(e.target.value)}
-              required
-              autoFocus
-            />
-
-            <TextInput
-              label="Display Name / Username"
-              placeholder="e.g. Andrey Shyiski"
-              value={googleName}
-              onChange={(e) => setGoogleName(e.target.value)}
-            />
-
-            {/* Live Profile & Initials Preview */}
-            <Paper p="sm" radius="md" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <Group gap="sm" align="center">
-                <Avatar
-                  size={46}
-                  radius="xl"
-                  color="indigo"
-                  variant="gradient"
-                  gradient={{ from: 'indigo', to: 'blue' }}
-                >
-                  {((googleName && googleName.trim()) || (googleEmail && googleEmail.split('@')[0]) || 'G').slice(0, 2).toUpperCase()}
-                </Avatar>
-                <div>
-                  <Text size="xs" fw={600}>
-                    {googleName.trim() || googleEmail.trim() || 'Your Account'}
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    Your avatar will display these initials or your Google profile photo
-                  </Text>
-                </div>
-              </Group>
-            </Paper>
-
-            <Group justify="flex-end" mt="xs">
-              <Button variant="default" onClick={() => setGoogleModalOpened(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" color="indigo" loading={loading} leftSection={<GoogleIcon />}>
-                Continue with Google
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Modal>
     </Card>
   );
 }
