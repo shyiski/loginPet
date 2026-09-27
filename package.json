@@ -1,0 +1,48 @@
+{
+  "name": "login-pet",
+  "version": "1.0.0",
+  "description": "Auth system with 2FA (TOTP) and SQLite database schema in Node.js",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "start": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run server\" \"npm run client\"",
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run server:dev\" \"npm run client\"",
+    "server": "nodemon src/app.js",
+    "server:dev": "nodemon src/app.js",
+    "client": "vite",
+    "build": "vite build",
+    "db:init": "node src/db/init.js"
+  },
+  "keywords": [
+    "auth",
+    "2fa",
+    "totp",
+    "sqlite",
+    "express",
+    "node"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mantine/core": "^9.6.3",
+    "@mantine/hooks": "^9.6.3",
+    "@mantine/notifications": "^9.6.3",
+    "@tabler/icons-react": "^3.48.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.10.2",
+    "otplib": "^12.0.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vite": "^8.3.1"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "nodemon": "^3.1.9"
+  }
+}
