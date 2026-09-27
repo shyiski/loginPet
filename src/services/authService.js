@@ -11,6 +11,7 @@ import {
   generateBackupCodes,
   verifyBackupCode
 } from './totpService.js';
+import { bruteForceService } from './bruteForceService.js';
 
 export const authService = {
   /**
@@ -118,6 +119,16 @@ export const authService = {
       throw new Error('Username or email and password are required');
     }
 
+    // 1. Check if identifier or IP is in 15-minute lockout
+    const lockout = bruteForceService.checkLockout(loginKey, reqInfo.ip);
+    if (lockout.isLocked) {
+      const err = new Error(lockout.message);
+      err.statusCode = 429;
+      err.isLocked = true;
+      err.remainingMinutes = lockout.remainingMinutes;
+      throw err;
+    }
+
     const user = await userRepo.findByEmailOrUsername(loginKey);
     if (!user) {
       await authLogsRepo.create({
@@ -127,7 +138,15 @@ export const authService = {
         userAgent: reqInfo.userAgent,
         details: `Login failed: user not found (${loginKey})`
       });
-      throw new Error('Invalid username/email or password');
+
+      const fail = await bruteForceService.recordFailure(loginKey, reqInfo.ip, reqInfo);
+      const err = new Error(fail.message);
+      if (fail.isLocked) {
+        err.statusCode = 429;
+        err.isLocked = true;
+        err.remainingMinutes = fail.remainingMinutes;
+      }
+      throw err;
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
@@ -139,8 +158,19 @@ export const authService = {
         userAgent: reqInfo.userAgent,
         details: 'Invalid password attempt'
       });
-      throw new Error('Invalid username/email or password');
+
+      const fail = await bruteForceService.recordFailure(loginKey, reqInfo.ip, reqInfo);
+      const err = new Error(fail.message);
+      if (fail.isLocked) {
+        err.statusCode = 429;
+        err.isLocked = true;
+        err.remainingMinutes = fail.remainingMinutes;
+      }
+      throw err;
     }
+
+    // Reset failed attempts on valid password
+    bruteForceService.recordSuccess(loginKey, reqInfo.ip);
 
     // Check if 2FA is active
     if (user.two_factor_enabled === 1 || user.two_factor_enabled === true) {
@@ -197,6 +227,16 @@ export const authService = {
       throw new Error('User not found');
     }
 
+    // Check lockout on 2FA step
+    const lockout = bruteForceService.checkLockout(user.email, reqInfo.ip);
+    if (lockout.isLocked) {
+      const err = new Error(lockout.message);
+      err.statusCode = 429;
+      err.isLocked = true;
+      err.remainingMinutes = lockout.remainingMinutes;
+      throw err;
+    }
+
     // If logging in via Backup Code
     if (isBackupCode) {
       const unusedCodes = await backupCodesRepo.getUnusedCodes(user.id);
@@ -210,7 +250,15 @@ export const authService = {
           userAgent: reqInfo.userAgent,
           details: 'Failed 2FA attempt using backup code'
         });
-        throw new Error('Invalid or already used backup code');
+
+        const fail = await bruteForceService.recordFailure(user.email, reqInfo.ip, reqInfo);
+        const err = new Error(fail.isLocked ? fail.message : `Invalid or already used backup code. ${fail.remainingAttempts} attempt(s) remaining.`);
+        if (fail.isLocked) {
+          err.statusCode = 429;
+          err.isLocked = true;
+          err.remainingMinutes = fail.remainingMinutes;
+        }
+        throw err;
       }
 
       await backupCodesRepo.markAsUsed(backupCodeId);
@@ -221,6 +269,8 @@ export const authService = {
         userAgent: reqInfo.userAgent,
         details: `2FA authenticated via backup code (code id #${backupCodeId})`
       });
+
+      bruteForceService.recordSuccess(user.email, reqInfo.ip);
 
       const safeUser = await userRepo.findById(user.id);
       const token = generateAuthToken(safeUser);
@@ -241,7 +291,15 @@ export const authService = {
         userAgent: reqInfo.userAgent,
         details: 'Invalid 6-digit TOTP code'
       });
-      throw new Error('Invalid 2FA verification code');
+
+      const fail = await bruteForceService.recordFailure(user.email, reqInfo.ip, reqInfo);
+      const err = new Error(fail.isLocked ? fail.message : `Invalid 2FA verification code. ${fail.remainingAttempts} attempt(s) remaining.`);
+      if (fail.isLocked) {
+        err.statusCode = 429;
+        err.isLocked = true;
+        err.remainingMinutes = fail.remainingMinutes;
+      }
+      throw err;
     }
 
     await authLogsRepo.create({
@@ -251,6 +309,8 @@ export const authService = {
       userAgent: reqInfo.userAgent,
       details: '2FA authenticated successfully via TOTP app'
     });
+
+    bruteForceService.recordSuccess(user.email, reqInfo.ip);
 
     const safeUser = await userRepo.findById(user.id);
     const token = generateAuthToken(safeUser);

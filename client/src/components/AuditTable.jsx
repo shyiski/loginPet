@@ -57,6 +57,10 @@ export function AuditTable() {
         return <Badge color="teal" variant="light">2FA OK</Badge>;
       case '2FA_FAILED':
         return <Badge color="orange" variant="light">2FA FAIL</Badge>;
+      case 'BRUTE_FORCE_BLOCKED':
+        return <Badge color="red" variant="filled">LOCKED 15M</Badge>;
+      case 'LOGIN_PASSWORD_OK':
+        return <Badge color="blue" variant="light">PASS OK</Badge>;
       case '2FA_ENABLED':
         return <Badge color="cyan" variant="light">2FA ON</Badge>;
       case '2FA_DISABLED':

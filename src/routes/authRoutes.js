@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authService } from '../services/authService.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 import { backupCodesRepo, userRepo } from '../db/index.js';
+import { ipRateLimiter, checkAccountLockout } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -105,7 +106,7 @@ router.put('/profile', requireAuth, async (req, res) => {
  * Login (Step 1)
  * POST /api/auth/login
  */
-router.post('/login', async (req, res) => {
+router.post('/login', ipRateLimiter, checkAccountLockout, async (req, res) => {
   try {
     const { email, username, identifier, password } = req.body;
     const result = await authService.login({
@@ -137,7 +138,12 @@ router.post('/login', async (req, res) => {
       message: 'Login successful'
     });
   } catch (error) {
-    res.status(401).json({ error: error.message });
+    const status = error.statusCode || 401;
+    res.status(status).json({
+      error: error.message,
+      isLocked: Boolean(error.isLocked),
+      remainingMinutes: error.remainingMinutes
+    });
   }
 });
 
@@ -145,7 +151,7 @@ router.post('/login', async (req, res) => {
  * Verify 2FA (Step 2)
  * POST /api/auth/verify-2fa
  */
-router.post('/verify-2fa', async (req, res) => {
+router.post('/verify-2fa', ipRateLimiter, checkAccountLockout, async (req, res) => {
   try {
     const { tempToken, code, isBackupCode } = req.body;
     const result = await authService.verify2FALogin({
@@ -172,7 +178,12 @@ router.post('/verify-2fa', async (req, res) => {
         : 'Two-factor authentication verified'
     });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    const status = error.statusCode || 400;
+    res.status(status).json({
+      error: error.message,
+      isLocked: Boolean(error.isLocked),
+      remainingMinutes: error.remainingMinutes
+    });
   }
 });
 

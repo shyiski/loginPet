@@ -239,8 +239,8 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
 
         {error && (
           <Alert
-            icon={<IconAlertCircle size={16} />}
-            title="Error"
+            icon={error.toLowerCase().includes('lock') ? <IconLock size={16} /> : <IconAlertCircle size={16} />}
+            title={error.toLowerCase().includes('lock') ? "Security Lockout (15 min)" : "Authentication Error"}
             color="red"
             variant="light"
             radius="md"
