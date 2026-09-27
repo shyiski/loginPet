@@ -148,37 +148,82 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
     }
   };
 
-  const handleGoogleAuth = async () => {
-    setLoading(true);
+  const handleGoogleAuth = () => {
     setError(null);
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    if (!clientId) {
+      setError("To display the official Google Account Picker popup, please provide your GOOGLE_CLIENT_ID in .env.local (Google Cloud Console OAuth 2.0 Client ID).");
+      return;
+    }
+
+    if (!window.google?.accounts?.oauth2) {
+      setError("Google Identity Services is loading. Please try again in a moment.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      // 1-Click Google Authentication: handles both sign in and new account creation
-      const res = await api.loginGoogle({
-        email: "shyiski@gmail.com",
-        name: "shyiski",
-        googleId: "google_shyiski",
-        avatarUrl: null
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: "email profile openid",
+        prompt: "select_account",
+        callback: async (tokenResponse) => {
+          if (tokenResponse.error) {
+            setLoading(false);
+            if (tokenResponse.error !== "popup_closed_by_user") {
+              setError(`Google Sign-In: ${tokenResponse.error_description || tokenResponse.error}`);
+            }
+            return;
+          }
+
+          try {
+            // Fetch real user profile from Google's official userinfo API
+            const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+              headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+            });
+
+            if (!userInfoRes.ok) {
+              throw new Error("Failed to fetch Google profile");
+            }
+
+            const profile = await userInfoRes.json();
+            // profile contains real email, name, and picture from Google
+            const res = await api.loginGoogle({
+              email: profile.email,
+              name: profile.name || profile.email.split('@')[0],
+              googleId: profile.sub,
+              avatarUrl: profile.picture || null
+            });
+
+            if (res.isNew) {
+              notifications.show({
+                title: "Google Registration Successful!",
+                message: `Signed in as ${profile.email}. Setting up 2FA...`,
+                color: "teal"
+              });
+              onRegisterSuccess(res.user);
+            } else {
+              notifications.show({
+                title: "Google Sign In",
+                message: `Welcome back, ${res.user.username || profile.name}!`,
+                color: "teal"
+              });
+              onAuthSuccess(res.user);
+            }
+          } catch (err) {
+            setError(err.message || "Failed to complete Google authentication");
+          } finally {
+            setLoading(false);
+          }
+        }
       });
 
-      if (res.isNew) {
-        notifications.show({
-          title: "Google Registration Successful!",
-          message: "Signed in with shyiski@gmail.com. Setting up 2FA...",
-          color: "teal"
-        });
-        onRegisterSuccess(res.user);
-      } else {
-        notifications.show({
-          title: "Google Sign In",
-          message: `Welcome back, ${res.user.username || 'shyiski'}!`,
-          color: "teal"
-        });
-        onAuthSuccess(res.user);
-      }
+      // Launch the standard Google popup window with account picker
+      client.requestAccessToken({ prompt: "select_account" });
     } catch (err) {
-      setError(err.message || "Google authentication failed");
-    } finally {
       setLoading(false);
+      setError(err.message || "Could not launch Google Sign-In popup");
     }
   };
 
