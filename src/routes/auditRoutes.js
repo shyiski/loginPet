@@ -1,14 +1,15 @@
 import { Router } from 'express';
 import { authLogsRepo, db, isMongoActive } from '../db/index.js';
 import { UserModel, BackupCodeModel } from '../db/mongo.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
 /**
- * Get recent auth audit logs
+ * Get recent auth audit logs (Protected: logged in users only)
  * GET /api/audit/logs
  */
-router.get('/logs', async (req, res) => {
+router.get('/logs', requireAuth, async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 30, 100);
     const logs = await authLogsRepo.getRecent(limit);
@@ -19,10 +20,10 @@ router.get('/logs', async (req, res) => {
 });
 
 /**
- * Get system stats
+ * Get system stats (Protected: logged in users only)
  * GET /api/audit/stats
  */
-router.get('/stats', async (req, res) => {
+router.get('/stats', requireAuth, async (req, res) => {
   try {
     const stats = await authLogsRepo.getStats();
     res.json({ stats });
@@ -35,7 +36,7 @@ router.get('/stats', async (req, res) => {
  * Raw DB Schema inspection endpoint for backend testing
  * GET /api/audit/schema
  */
-router.get('/schema', async (req, res) => {
+router.get('/schema', requireAuth, async (req, res) => {
   try {
     if (isMongoActive()) {
       const users = await UserModel.find().sort({ _id: -1 }).lean();

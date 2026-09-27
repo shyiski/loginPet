@@ -292,13 +292,6 @@ export default function App() {
                     </Menu.Item>
 
                     <Menu.Item
-                      leftSection={<IconRocket size={16} />}
-                      onClick={() => setCurrentView('setup-2fa')}
-                    >
-                      First-time Onboarding
-                    </Menu.Item>
-
-                    <Menu.Item
                       leftSection={<IconUsers size={16} />}
                       onClick={() => setCurrentView('users-table')}
                     >
@@ -344,26 +337,13 @@ export default function App() {
               <Loader size="lg" color="indigo" />
               <Text size="sm" c="dimmed">Connecting to system...</Text>
             </Stack>
-          ) : currentView === 'auth' ? (
+          ) : currentView === 'auth' || !currentUser ? (
             <Stack gap="xl">
               <AuthCard
                 onAuthSuccess={handleAuthSuccess}
                 onRegisterSuccess={handleRegisterSuccess}
                 dbStatus={dbStatus}
               />
-
-              {/* Viewable Audit Logs */}
-              <div style={{ textAlign: 'center' }}>
-                <Button
-                  variant="subtle"
-                  color="gray"
-                  size="xs"
-                  leftSection={<IconActivity size={14} />}
-                  onClick={() => setCurrentView('logs')}
-                >
-                  View Security Event Audit Logs
-                </Button>
-              </div>
             </Stack>
           ) : currentView === 'setup-2fa' ? (
             <div className="fade-in">
