@@ -210,7 +210,7 @@ export default function App() {
                               transition: 'transform 0.2s ease'
                             }}
                           >
-                            {(currentUser.username || currentUser.email || 'U')[0].toUpperCase()}
+                            {(currentUser.username || currentUser.email || 'U').slice(0, 2).toUpperCase()}
                           </Avatar>
                           {/* Active/Google badge indicator */}
                           <span
@@ -249,7 +249,7 @@ export default function App() {
                           radius="xl"
                           color={currentUser.gender === 'F' ? 'pink' : 'indigo'}
                         >
-                          {(currentUser.username || currentUser.email || 'U')[0].toUpperCase()}
+                          {(currentUser.username || currentUser.email || 'U').slice(0, 2).toUpperCase()}
                         </Avatar>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <Text size="sm" fw={700} truncate>

@@ -208,7 +208,7 @@ export function UsersTable({ currentUser }) {
                                 : { from: 'indigo', to: 'blue' }
                             }
                           >
-                            {(u.username || u.email || 'U')[0].toUpperCase()}
+                            {(u.username || u.email || 'U').slice(0, 2).toUpperCase()}
                           </Avatar>
                           <div>
                             <Group gap={6} align="center">

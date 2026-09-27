@@ -35,13 +35,6 @@ import { notifications } from "@mantine/notifications";
 import { api } from "../api.js";
 import { TwoFactorVerifyModal } from "./TwoFactorVerifyModal.jsx";
 
-const GOOGLE_AVATAR_PRESETS = [
-  { id: '1', label: 'Photo 1', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' },
-  { id: '2', label: 'Photo 2', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' },
-  { id: '3', label: 'Photo 3', url: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80' },
-  { id: '4', label: 'Standard', url: 'https://lh3.googleusercontent.com/a/default-user=s96-c' }
-];
-
 // Custom Google Icon
 function GoogleIcon() {
   return (
@@ -71,7 +64,6 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
   const [googleModalOpened, setGoogleModalOpened] = useState(false);
   const [googleEmail, setGoogleEmail] = useState("");
   const [googleName, setGoogleName] = useState("");
-  const [googleAvatarUrl, setGoogleAvatarUrl] = useState(GOOGLE_AVATAR_PRESETS[0].url);
 
   // 2FA pending state
   const [twoFactorData, setTwoFactorData] = useState(null);
@@ -172,11 +164,12 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
     setLoading(true);
     setError(null);
     try {
+      const cleanEmail = googleEmail.trim().toLowerCase();
       const res = await api.loginGoogle({
-        email: googleEmail.trim(),
-        name: googleName.trim() || googleEmail.split('@')[0],
+        email: cleanEmail,
+        name: googleName.trim() || cleanEmail.split('@')[0],
         googleId: 'g_' + Math.random().toString(36).substring(2, 10),
-        avatarUrl: googleAvatarUrl
+        avatarUrl: null // No cartoon presets: uses user's clean initials or real Google photo
       });
 
       setGoogleModalOpened(false);
@@ -275,8 +268,8 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
           radius="md"
           leftSection={<GoogleIcon />}
           onClick={() => {
-            setGoogleEmail("user@gmail.com");
-            setGoogleName("Google User");
+            setGoogleEmail("");
+            setGoogleName("");
             setGoogleModalOpened(true);
           }}
         >
@@ -451,12 +444,12 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
         <form onSubmit={handleGoogleSubmit}>
           <Stack gap="md">
             <Text size="xs" c="dimmed">
-              One-click sign in or sign up with your Google account:
+              Sign in with your Google account credentials:
             </Text>
 
             <TextInput
               label="Google Email"
-              placeholder="user@gmail.com"
+              placeholder="e.g. yourname@gmail.com"
               type="email"
               value={googleEmail}
               onChange={(e) => setGoogleEmail(e.target.value)}
@@ -465,35 +458,34 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
             />
 
             <TextInput
-              label="Username"
-              placeholder="John Doe"
+              label="Display Name / Username"
+              placeholder="e.g. Andrey Shyiski"
               value={googleName}
               onChange={(e) => setGoogleName(e.target.value)}
             />
 
-            <div>
-              <Text size="xs" fw={600} mb={6}>
-                Google Profile Photo (for top-right avatar):
-              </Text>
+            {/* Live Profile & Initials Preview */}
+            <Paper p="sm" radius="md" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <Group gap="sm" align="center">
-                {GOOGLE_AVATAR_PRESETS.map((preset) => (
-                  <UnstyledButton
-                    key={preset.id}
-                    onClick={() => setGoogleAvatarUrl(preset.url)}
-                    style={{
-                      borderRadius: '50%',
-                      padding: 2,
-                      border: googleAvatarUrl === preset.url ? '2px solid #4285F4' : '2px solid transparent',
-                      boxShadow: googleAvatarUrl === preset.url ? '0 0 10px rgba(66, 133, 244, 0.6)' : 'none',
-                      transition: 'all 0.2s ease',
-                      outline: 'none'
-                    }}
-                  >
-                    <Avatar src={preset.url} size={42} radius="xl" />
-                  </UnstyledButton>
-                ))}
+                <Avatar
+                  size={46}
+                  radius="xl"
+                  color="indigo"
+                  variant="gradient"
+                  gradient={{ from: 'indigo', to: 'blue' }}
+                >
+                  {((googleName && googleName.trim()) || (googleEmail && googleEmail.split('@')[0]) || 'G').slice(0, 2).toUpperCase()}
+                </Avatar>
+                <div>
+                  <Text size="xs" fw={600}>
+                    {googleName.trim() || googleEmail.trim() || 'Your Account'}
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    Your avatar will display these initials or your Google profile photo
+                  </Text>
+                </div>
               </Group>
-            </div>
+            </Paper>
 
             <Group justify="flex-end" mt="xs">
               <Button variant="default" onClick={() => setGoogleModalOpened(false)}>

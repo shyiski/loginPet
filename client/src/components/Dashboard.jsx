@@ -77,6 +77,7 @@ export function Dashboard({ user, onUserUpdate, onLogout }) {
             <Avatar
               size={64}
               radius="xl"
+              src={user?.avatarUrl || user?.avatar_url}
               color={user?.gender === 'F' ? 'pink' : 'indigo'}
               variant="gradient"
               gradient={
@@ -84,8 +85,12 @@ export function Dashboard({ user, onUserUpdate, onLogout }) {
                   ? { from: 'pink', to: 'violet' }
                   : { from: 'indigo', to: 'blue' }
               }
+              style={{
+                border: (user?.avatarUrl || user?.avatar_url) ? '3px solid #4285F4' : '3px solid rgba(99, 102, 241, 0.6)',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.3)'
+              }}
             >
-              {(user?.username || user?.email || 'U')[0].toUpperCase()}
+              {(user?.username || user?.email || 'U').slice(0, 2).toUpperCase()}
             </Avatar>
             <div>
               <Group gap="xs" align="center">
