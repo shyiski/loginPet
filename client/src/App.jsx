@@ -11,12 +11,10 @@ import {
   Loader,
   Menu,
   Avatar,
-  UnstyledButton,
-  Divider
+  UnstyledButton
 } from '@mantine/core';
 import {
   IconShield,
-  IconUser,
   IconActivity,
   IconLogout,
   IconSettings,
@@ -24,8 +22,7 @@ import {
   IconShieldLock,
   IconChevronDown,
   IconGenderMale,
-  IconGenderFemale,
-  IconRocket
+  IconGenderFemale
 } from '@tabler/icons-react';
 import { api } from './api.js';
 import { AuthCard } from './components/AuthCard.jsx';
@@ -148,44 +145,6 @@ export default function App() {
                 <span>{dbStatus?.database || 'MongoDB Atlas'}</span>
               </div>
 
-              {/* Navigation links if logged in */}
-              {currentUser && (
-                <Group gap="xs" visibleFrom="sm">
-                  <Button
-                    variant={currentView === 'users-table' ? 'light' : 'subtle'}
-                    color="indigo"
-                    size="xs"
-                    radius="md"
-                    leftSection={<IconUsers size={14} />}
-                    onClick={() => setCurrentView('users-table')}
-                  >
-                    Users
-                  </Button>
-
-                  <Button
-                    variant={currentView === 'dashboard' ? 'light' : 'subtle'}
-                    color="indigo"
-                    size="xs"
-                    radius="md"
-                    leftSection={<IconShieldLock size={14} />}
-                    onClick={() => setCurrentView('dashboard')}
-                  >
-                    2FA Security
-                  </Button>
-
-                  <Button
-                    variant={currentView === 'logs' ? 'light' : 'subtle'}
-                    color="indigo"
-                    size="xs"
-                    radius="md"
-                    leftSection={<IconActivity size={14} />}
-                    onClick={() => setCurrentView('logs')}
-                  >
-                    Audit
-                  </Button>
-                </Group>
-              )}
-
               {/* User Avatar Circle with Dropdown Menu in top right corner */}
               {currentUser ? (
                 <Menu shadow="lg" width={270} position="bottom-end" transitionProps={{ transition: 'pop-top-right' }}>
@@ -284,16 +243,14 @@ export default function App() {
 
                     <Menu.Divider />
 
-                    <Menu.Item
-                      leftSection={<IconSettings size={16} />}
-                      onClick={() => setCurrentView('profile-setup')}
-                    >
-                      Settings
-                    </Menu.Item>
-
+                    <Menu.Label>Navigation</Menu.Label>
                     <Menu.Item
                       leftSection={<IconUsers size={16} />}
                       onClick={() => setCurrentView('users-table')}
+                      style={{
+                        backgroundColor: currentView === 'users-table' ? 'rgba(99, 102, 241, 0.15)' : undefined,
+                        fontWeight: currentView === 'users-table' ? 600 : 400
+                      }}
                     >
                       Users Table
                     </Menu.Item>
@@ -301,6 +258,10 @@ export default function App() {
                     <Menu.Item
                       leftSection={<IconShieldLock size={16} />}
                       onClick={() => setCurrentView('dashboard')}
+                      style={{
+                        backgroundColor: currentView === 'dashboard' ? 'rgba(99, 102, 241, 0.15)' : undefined,
+                        fontWeight: currentView === 'dashboard' ? 600 : 400
+                      }}
                     >
                       2FA & Security
                     </Menu.Item>
@@ -308,8 +269,26 @@ export default function App() {
                     <Menu.Item
                       leftSection={<IconActivity size={16} />}
                       onClick={() => setCurrentView('logs')}
+                      style={{
+                        backgroundColor: currentView === 'logs' ? 'rgba(99, 102, 241, 0.15)' : undefined,
+                        fontWeight: currentView === 'logs' ? 600 : 400
+                      }}
                     >
                       Audit Logs
+                    </Menu.Item>
+
+                    <Menu.Divider />
+
+                    <Menu.Label>Account</Menu.Label>
+                    <Menu.Item
+                      leftSection={<IconSettings size={16} />}
+                      onClick={() => setCurrentView('profile-setup')}
+                      style={{
+                        backgroundColor: currentView === 'profile-setup' ? 'rgba(99, 102, 241, 0.15)' : undefined,
+                        fontWeight: currentView === 'profile-setup' ? 600 : 400
+                      }}
+                    >
+                      Profile Settings
                     </Menu.Item>
 
                     <Menu.Divider />
@@ -338,13 +317,10 @@ export default function App() {
               <Text size="sm" c="dimmed">Connecting to system...</Text>
             </Stack>
           ) : currentView === 'auth' || !currentUser ? (
-            <Stack gap="xl">
-              <AuthCard
-                onAuthSuccess={handleAuthSuccess}
-                onRegisterSuccess={handleRegisterSuccess}
-                dbStatus={dbStatus}
-              />
-            </Stack>
+            <AuthCard
+              onAuthSuccess={handleAuthSuccess}
+              onRegisterSuccess={handleRegisterSuccess}
+            />
           ) : currentView === 'setup-2fa' ? (
             <div className="fade-in">
               <TwoFactorOnboarding

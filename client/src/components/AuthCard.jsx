@@ -13,22 +13,17 @@ import {
   ThemeIcon,
   Badge,
   Divider,
-  Avatar,
-  UnstyledButton,
   Paper,
-  Box
 } from "@mantine/core";
 import {
   IconLock,
-  IconUser,
   IconMail,
   IconAlertCircle,
   IconUserPlus,
   IconLogin,
   IconShield,
   IconDatabase,
-  IconBrandGoogle,
-  IconCheck
+  IconCheck,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { api } from "../api.js";
@@ -38,15 +33,27 @@ import { TwoFactorVerifyModal } from "./TwoFactorVerifyModal.jsx";
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
     </svg>
   );
 }
 
-export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
+export function AuthCard({ onAuthSuccess, onRegisterSuccess }) {
   const [activeTab, setActiveTab] = useState("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -61,6 +68,39 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
 
   // 2FA pending state
   const [twoFactorData, setTwoFactorData] = useState(null);
+
+  const performGoogleLogin = async ({ email, name, googleId, avatarUrl }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.loginGoogle({
+        email: email.trim(),
+        name: name || email.trim().split("@")[0],
+        googleId: googleId || `google_${Date.now()}`,
+        avatarUrl: avatarUrl || null,
+      });
+
+      if (res.isNew) {
+        notifications.show({
+          title: "Google Registration Successful!",
+          message: `Signed in as ${email}. Setting up 2FA...`,
+          color: "teal",
+        });
+        onRegisterSuccess(res.user);
+      } else {
+        notifications.show({
+          title: "Google Sign In",
+          message: `Welcome back, ${res.user.username || name || email}!`,
+          color: "teal",
+        });
+        onAuthSuccess(res.user);
+      }
+    } catch (err) {
+      setError(err.message || "Failed to complete Google authentication");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -99,7 +139,9 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
 
   const hasMinLength = regPassword.length >= 6;
   const hasUppercase = /[A-Z]/.test(regPassword);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`§±]/.test(regPassword);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`§±]/.test(
+    regPassword,
+  );
   const isPasswordValid = hasMinLength && hasUppercase && hasSpecialChar;
 
   const handleRegister = async (e) => {
@@ -122,7 +164,9 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
     }
 
     if (!hasSpecialChar) {
-      setError("Password must contain at least one special character or symbol (!@#$...)");
+      setError(
+        "Password must contain at least one special character or symbol (!@#$...)",
+      );
       return;
     }
 
@@ -150,80 +194,87 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
 
   const handleGoogleAuth = () => {
     setError(null);
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId =
+      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+      "1093879172064-dgfh2g7at26s7mjif8g7cr3pqop0e70q.apps.googleusercontent.com";
 
-    if (!clientId) {
-      setError("To display the official Google Account Picker popup, please provide your GOOGLE_CLIENT_ID in .env.local (Google Cloud Console OAuth 2.0 Client ID).");
-      return;
-    }
-
-    if (!window.google?.accounts?.oauth2) {
-      setError("Google Identity Services is loading. Please try again in a moment.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: "email profile openid",
-        prompt: "select_account",
-        callback: async (tokenResponse) => {
-          if (tokenResponse.error) {
-            setLoading(false);
-            if (tokenResponse.error !== "popup_closed_by_user") {
-              setError(`Google Sign-In: ${tokenResponse.error_description || tokenResponse.error}`);
-            }
-            return;
-          }
-
-          try {
-            // Fetch real user profile from Google's official userinfo API
-            const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-              headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
-            });
-
-            if (!userInfoRes.ok) {
-              throw new Error("Failed to fetch Google profile");
+    const launchPopup = () => {
+      setLoading(true);
+      try {
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: "email profile openid",
+          prompt: "select_account",
+          callback: async (tokenResponse) => {
+            if (tokenResponse.error) {
+              setLoading(false);
+              if (tokenResponse.error !== "popup_closed_by_user") {
+                setError(
+                  `Google Sign-In: ${tokenResponse.error_description || tokenResponse.error}`,
+                );
+              }
+              return;
             }
 
-            const profile = await userInfoRes.json();
-            // profile contains real email, name, and picture from Google
-            const res = await api.loginGoogle({
-              email: profile.email,
-              name: profile.name || profile.email.split('@')[0],
-              googleId: profile.sub,
-              avatarUrl: profile.picture || null
-            });
+            try {
+              // Fetch real user profile from Google's official userinfo API
+              const userInfoRes = await fetch(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                {
+                  headers: {
+                    Authorization: `Bearer ${tokenResponse.access_token}`,
+                  },
+                },
+              );
 
-            if (res.isNew) {
-              notifications.show({
-                title: "Google Registration Successful!",
-                message: `Signed in as ${profile.email}. Setting up 2FA...`,
-                color: "teal"
+              if (!userInfoRes.ok) {
+                throw new Error("Failed to fetch Google profile");
+              }
+
+              const profile = await userInfoRes.json();
+              await performGoogleLogin({
+                email: profile.email,
+                name: profile.name || profile.email.split("@")[0],
+                googleId: profile.sub,
+                avatarUrl: profile.picture || null,
               });
-              onRegisterSuccess(res.user);
-            } else {
-              notifications.show({
-                title: "Google Sign In",
-                message: `Welcome back, ${res.user.username || profile.name}!`,
-                color: "teal"
-              });
-              onAuthSuccess(res.user);
+            } catch (err) {
+              setError(
+                err.message || "Failed to complete Google authentication",
+              );
+              setLoading(false);
             }
-          } catch (err) {
-            setError(err.message || "Failed to complete Google authentication");
-          } finally {
-            setLoading(false);
-          }
+          },
+        });
+
+        // Launch the official Google popup with account picker
+        client.requestAccessToken({ prompt: "select_account" });
+      } catch (err) {
+        setLoading(false);
+        setError(err.message || "Could not launch Google Sign-In popup");
+      }
+    };
+
+    if (window.google?.accounts?.oauth2) {
+      launchPopup();
+    } else {
+      setLoading(true);
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.onload = () => {
+        if (window.google?.accounts?.oauth2) {
+          launchPopup();
+        } else {
+          setLoading(false);
+          setError("Google Identity Services failed to load.");
         }
-      });
-
-      // Launch the standard Google popup window with account picker
-      client.requestAccessToken({ prompt: "select_account" });
-    } catch (err) {
-      setLoading(false);
-      setError(err.message || "Could not launch Google Sign-In popup");
+      };
+      script.onerror = () => {
+        setLoading(false);
+        setError("Failed to load Google Sign-In script.");
+      };
+      document.head.appendChild(script);
     }
   };
 
@@ -281,8 +332,18 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
 
         {error && (
           <Alert
-            icon={error.toLowerCase().includes('lock') ? <IconLock size={16} /> : <IconAlertCircle size={16} />}
-            title={error.toLowerCase().includes('lock') ? "Security Lockout (15 min)" : "Authentication Error"}
+            icon={
+              error.toLowerCase().includes("lock") ? (
+                <IconLock size={16} />
+              ) : (
+                <IconAlertCircle size={16} />
+              )
+            }
+            title={
+              error.toLowerCase().includes("lock")
+                ? "Security Lockout (15 min)"
+                : "Authentication Error"
+            }
             color="red"
             variant="light"
             radius="md"
@@ -304,7 +365,11 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
           Continue with Google
         </Button>
 
-        <Divider label="or continue with email and password" labelPosition="center" my="xs" />
+        <Divider
+          label="or continue with email and password"
+          labelPosition="center"
+          my="xs"
+        />
 
         <Tabs
           value={activeTab}
@@ -396,15 +461,28 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
 
                 {/* Password Complexity Checklist */}
                 {regPassword.length > 0 && (
-                  <Paper p="xs" radius="md" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <Paper
+                    p="xs"
+                    radius="md"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.03)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                    }}
+                  >
                     <Stack gap={4}>
-                      <Text size="xs" fw={600} c="dimmed">Password requirements:</Text>
+                      <Text size="xs" fw={600} c="dimmed">
+                        Password requirements:
+                      </Text>
                       <Group gap="xs">
                         <Badge
                           size="xs"
                           variant={hasMinLength ? "filled" : "outline"}
                           color={hasMinLength ? "teal" : "gray"}
-                          leftSection={hasMinLength ? <IconCheck size={10} stroke={3} /> : null}
+                          leftSection={
+                            hasMinLength ? (
+                              <IconCheck size={10} stroke={3} />
+                            ) : null
+                          }
                         >
                           6+ characters
                         </Badge>
@@ -412,7 +490,11 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
                           size="xs"
                           variant={hasUppercase ? "filled" : "outline"}
                           color={hasUppercase ? "teal" : "gray"}
-                          leftSection={hasUppercase ? <IconCheck size={10} stroke={3} /> : null}
+                          leftSection={
+                            hasUppercase ? (
+                              <IconCheck size={10} stroke={3} />
+                            ) : null
+                          }
                         >
                           1 uppercase (A-Z)
                         </Badge>
@@ -420,7 +502,11 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
                           size="xs"
                           variant={hasSpecialChar ? "filled" : "outline"}
                           color={hasSpecialChar ? "teal" : "gray"}
-                          leftSection={hasSpecialChar ? <IconCheck size={10} stroke={3} /> : null}
+                          leftSection={
+                            hasSpecialChar ? (
+                              <IconCheck size={10} stroke={3} />
+                            ) : null
+                          }
                         >
                           1 symbol (!@#$...)
                         </Badge>
@@ -455,7 +541,6 @@ export function AuthCard({ onAuthSuccess, onRegisterSuccess, dbStatus }) {
           </Tabs.Panel>
         </Tabs>
       </Stack>
-
     </Card>
   );
 }

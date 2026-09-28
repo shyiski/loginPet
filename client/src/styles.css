@@ -23,7 +23,7 @@ body {
 
 /* Glassmorphism card effects */
 .glass-card {
-  background: rgba(17, 24, 39, 0.75) !important;
+  background: rgba(17, 24, 39, 0.92) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -31,7 +31,7 @@ body {
 }
 
 .glass-nav {
-  background: rgba(11, 15, 25, 0.8) !important;
+  background: rgba(11, 15, 25, 0.92) !important;
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }

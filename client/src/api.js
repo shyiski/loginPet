@@ -88,6 +88,5 @@ export const api = {
 
   // Audit Logs & Stats
   getAuditLogs: (limit = 40) => request(`/audit/logs?limit=${limit}`),
-  getStats: () => request('/audit/stats'),
-  getSchema: () => request('/audit/schema')
+  getStats: () => request('/audit/stats')
 };

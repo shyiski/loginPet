@@ -23,7 +23,6 @@ import {
   IconCopy,
   IconCheck,
   IconDownload,
-  IconQrcode,
   IconKey
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';

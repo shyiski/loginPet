@@ -21,8 +21,6 @@ import {
   IconDatabase,
   IconLock,
   IconAlertCircle,
-  IconUser,
-  IconMail,
   IconGenderMale,
   IconGenderFemale,
   IconEdit
